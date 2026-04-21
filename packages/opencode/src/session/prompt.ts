@@ -1721,46 +1721,62 @@ export const PromptInput = z.object({
   variant: z.string().optional(),
   parts: z.array(
     z.discriminatedUnion("type", [
-      MessageV2.TextPart.omit({
-        messageID: true,
-        sessionID: true,
-      })
-        .partial({
-          id: true,
+      z
+        .object({
+          id: PartID.zod.optional(),
+          type: z.literal("text"),
+          text: z.string(),
+          synthetic: z.boolean().optional(),
+          ignored: z.boolean().optional(),
+          time: z
+            .object({
+              start: z.number(),
+              end: z.number().optional(),
+            })
+            .optional(),
+          metadata: z.record(z.string(), z.any()).optional(),
         })
-        .meta({
-          ref: "TextPartInput",
-        }),
-      MessageV2.FilePart.omit({
-        messageID: true,
-        sessionID: true,
-      })
-        .partial({
-          id: true,
+        .meta({ ref: "TextPartInput" }),
+      z
+        .object({
+          id: PartID.zod.optional(),
+          type: z.literal("file"),
+          mime: z.string(),
+          filename: z.string().optional(),
+          url: z.string(),
+          source: MessageV2.FilePartSource.zod.optional(),
         })
-        .meta({
-          ref: "FilePartInput",
-        }),
-      MessageV2.AgentPart.omit({
-        messageID: true,
-        sessionID: true,
-      })
-        .partial({
-          id: true,
+        .meta({ ref: "FilePartInput" }),
+      z
+        .object({
+          id: PartID.zod.optional(),
+          type: z.literal("agent"),
+          name: z.string(),
+          source: z
+            .object({
+              value: z.string(),
+              start: z.number().int(),
+              end: z.number().int(),
+            })
+            .optional(),
         })
-        .meta({
-          ref: "AgentPartInput",
-        }),
-      MessageV2.SubtaskPart.omit({
-        messageID: true,
-        sessionID: true,
-      })
-        .partial({
-          id: true,
+        .meta({ ref: "AgentPartInput" }),
+      z
+        .object({
+          id: PartID.zod.optional(),
+          type: z.literal("subtask"),
+          prompt: z.string(),
+          description: z.string(),
+          agent: z.string(),
+          model: z
+            .object({
+              providerID: ProviderID.zod,
+              modelID: ModelID.zod,
+            })
+            .optional(),
+          command: z.string().optional(),
         })
-        .meta({
-          ref: "SubtaskPartInput",
-        }),
+        .meta({ ref: "SubtaskPartInput" }),
     ]),
   ),
 })
@@ -1795,11 +1811,13 @@ export const CommandInput = z.object({
   parts: z
     .array(
       z.discriminatedUnion("type", [
-        MessageV2.FilePart.omit({
-          messageID: true,
-          sessionID: true,
-        }).partial({
-          id: true,
+        z.object({
+          id: PartID.zod.optional(),
+          type: z.literal("file"),
+          mime: z.string(),
+          filename: z.string().optional(),
+          url: z.string(),
+          source: MessageV2.FilePartSource.zod.optional(),
         }),
       ]),
     )
